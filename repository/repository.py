@@ -12,7 +12,9 @@ class Repository:
     def __init__(self, db_collections: list[AsyncIOMotorCollection]):
         self._db_collections = db_collections
 
-    async def create(self, user: UserUpdate) -> str: # создание юзера
+
+#CreateUser
+    async def create(self, user: UserUpdate) -> str:
         insert_result = await self._db_collections[0].insert_one(dict(user))
         return str(insert_result.inserted_id)
 
@@ -32,8 +34,8 @@ class Repository:
         return map(updated_obj)
     
 
-
-    async def create_tweet(self, post: TweetUpdate) -> str: # юзер создаёт пост
+    #MakeTweet
+    async def create_tweet(self, post: Tweet) -> str:
         u = await self._db_collections[0].find_one(get_filter(post.user_id))
 
         u = map(u, self._db_collections[0].name)
@@ -61,10 +63,7 @@ class Repository:
     async def delete_post(self, id: str) -> User | Tweet| None:
         db = map(await self._db_collections[1].find_one_and_delete(get_filter(id)), self._db_collections[1])
         return db
-    
-    async def delete_comment(self, id: str) -> User | Tweet| None:
-        db = map(await self._db_collections[2].find_one_and_delete(get_filter(id)), self._db_collections[2])
-        return db
+
 
     @staticmethod
     async def get_instance(db_collections: list[AsyncIOMotorCollection] = Depends(get_db_collection)):

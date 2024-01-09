@@ -48,10 +48,10 @@ def get_filter(id: str) -> dict:
     return {'_id': ObjectId(id)}
 
 
-def map(obj: Any, collection: str) -> User | Tweet| None:
+def map(obj: Any, collection: str) -> User | Tweet | None:
     if obj is None:
         return None
     if collection == 'users_collection':
-        return User(id=str(obj['_id']), username=obj['username'], email=obj['email'], posts=obj['posts'], comments=obj['comments'])
+        return User(id=str(obj['_id']), username=obj['username'], email=obj['email'], posts=obj['tweets'])
     if collection == 'posts_collection':
-        return Tweet(id=str(obj['_id']), user_id=obj['user_id'], title=obj['title'], content=obj['content'], comments=obj['comments'])
+        return Tweet(id=str(obj['_id']), user_id=obj['user_id'], title=obj['title'], content=obj['content'])

@@ -13,6 +13,7 @@ from models.models import UserUpdate, TweetUpdate
 
 router = APIRouter()
 
+
 @router.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -33,9 +34,11 @@ async def get(collection: int, user_id: str, repository: Repository = Depends(Re
     obj = await repository.get_by_id(id = user_id, collection = collection)
     return obj
 
+
 @router.get("/user/filter", tags=["User"])
 async def get_by_name(username: str, repository: SearchStudentRepository = Depends(SearchStudentRepository.get_instance)) -> Any:
     return await repository.find_by_username(username = username)
+
 
 @router.get("/user/{user_id}", response_model=User, tags=["User"])
 async def get_by_id(user_id: str,
@@ -70,6 +73,7 @@ async def add_Tweet(Tweet: TweetUpdate,
     await search_repository.create_Tweet(id, Tweet)
     return id
 
+
 @router.delete("/user/{user_id}")
 async def remove_user(user_id: str,
                          repository: Repository = Depends(Repository.get_instance),
@@ -81,6 +85,7 @@ async def remove_user(user_id: str,
         return Response(status_code=status.HTTP_404_NOT_FOUND)
     await search_repository.delete(user_id)
     return Response()
+
 
 @router.delete("/Tweet/{Tweet_id}")
 async def remove_Tweet(Tweet_id: str,

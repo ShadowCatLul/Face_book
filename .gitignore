@@ -1,5 +1,5 @@
 # Ignore compiled Python files
 *.pyc
-
+*.idea
 # Ignore __pycache__ directory
 **/__pycache__/
