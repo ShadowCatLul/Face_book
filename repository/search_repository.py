@@ -17,25 +17,25 @@ class SearchStudentRepository:
         self._elasticsearch_index = index
 
     async def create(self, user_id: str, user: UserUpdate):
-        await self._elasticsearch_client.create(index=self._elasticsearch_index[0], id=user_id, body=dict(user))
+        await self._elasticsearch_client.create(index=self._elasticsearch_index[1], id=user_id, body=dict(user))
 
     async def update(self, user_id: str, user: UserUpdate):
-        await self._elasticsearch_client.update(index=self._elasticsearch_index[0], id=user_id, body=dict(user))
+        await self._elasticsearch_client.update(index=self._elasticsearch_index[1], id=user_id, body=dict(user))
 
     async def delete(self, user_id: str):
-        await self._elasticsearch_client.delete(index=self._elasticsearch_index[0], id=user_id)
+        await self._elasticsearch_client.delete(index=self._elasticsearch_index[1], id=user_id)
 
-    async def create_post(self, post_id: str, user: TweetUpdate):
-        await self._elasticsearch_client.create(index=self._elasticsearch_index[1], id=post_id, body=dict(user))
+    async def create_tweet(self, post_id: str, user: TweetUpdate):
+        await self._elasticsearch_client.create(index=self._elasticsearch_index[0], id=post_id, body=dict(user))
 
-    async def update_post(self, post_id: str, user: TweetUpdate):
-        await self._elasticsearch_client.update(index=self._elasticsearch_index[1], id=post_id, body=dict(user))
+    async def update_tweet(self, post_id: str, user: TweetUpdate):
+        await self._elasticsearch_client.update(index=self._elasticsearch_index[0], id=post_id, body=dict(user))
 
-    async def delete_post(self, post_id: str):
-        await self._elasticsearch_client.delete(index=self._elasticsearch_index[1], id=post_id)
+    async def delete_tweet(self, post_id: str):
+        await self._elasticsearch_client.delete(index=self._elasticsearch_index[0], id=post_id)
 
     async def find_by_username(self, username: str):
-        index_exist = await self._elasticsearch_client.indices.exists(index=self._elasticsearch_index[0])
+        index_exist = await self._elasticsearch_client.indices.exists(index=self._elasticsearch_index[1])
 
         if not index_exist:
             return []
@@ -47,33 +47,39 @@ class SearchStudentRepository:
                 }
             }
         }
-        response = await self._elasticsearch_client.search(index=self._elasticsearch_index[0], body=query_body, filter_path=['hits.hits._id', 'hits.hits._source'])
+        response = await self._elasticsearch_client.search(index=self._elasticsearch_index[1], body=query_body,
+                                                           filter_path=['hits.hits._id', 'hits.hits._source'])
         if 'hits' not in response:
             return []
         result = response['hits']['hits']
-        users = list(map(lambda _X: User(id=_X['_id'], username=_X['_source']['username'], email=_X['_source']['email'], posts=_X['_source']['posts'], comments=_X['_source']['comments']), result))
+        users = list(map(lambda _X: User(id=_X['_id'], username=_X['_source']['username'], email=_X['_source']['email'],
+                                         posts=_X['_source']['posts'], comments=_X['_source']['comments']), result))
 
         return users
-    
 
-    async def find_by_title(self, title: str):
-        index_exist = await self._elasticsearch_client.indices.exists(index=self._elasticsearch_index[1])
+    async def find_by_title(self, text: str):
+        index_exist = await self._elasticsearch_client.indices.exists(index=self._elasticsearch_index[0])
 
         if not index_exist:
             return []
 
-        query = {
-            "match": {
-                "name": {
-                    "query": title
+        query_body = {
+            "query":{
+                "match": {
+                    "tweet": {
+                        "query": text,
+                        "minimum_should_match": "75%"
+                    }
                 }
             }
         }
-        response = await self._elasticsearch_client.search(index=self._elasticsearch_index[1], query=query, filter_path=['hits.hits._id', 'hits.hits._source'])
+        response = await self._elasticsearch_client.search(index=self._elasticsearch_index[0],
+                                                           query=query_body, filter_path=['hits.hits._id', 'hits.hits._source'])
         if 'hits' not in response.body:
             return []
         result = response.body['hits']['hits']
-        posts = list(map(lambda user: User(id=user['_id'], username=user['_source']['name'], email=user['_source']['email']), result))
+        posts = list(map(lambda twt: Tweet(id=twt['_id'], user_id=twt['_source']['name'],
+                                           content=twt['_source']['content']), result))
 
         return posts
 

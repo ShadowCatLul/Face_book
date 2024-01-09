@@ -15,16 +15,18 @@ router = APIRouter()
 
 
 @router.get("/")
-def read_root():
+async def root():
+
     return {"Hello": "World"}
 
 
 @router.get("/user/all", tags=["User"])
 async def get_all(repository: Repository = Depends(Repository.get_instance)) -> list[User] | list[Tweet]:
-    return await repository.get_all(0)
-@router.get("/Tweet/all", tags=["Tweet"])
-async def get_all(repository: Repository = Depends(Repository.get_instance)) -> list[User] | list[Tweet]:
     return await repository.get_all(1)
+
+@router.get("/tweet/all", tags=["tweet"])
+async def get_all(repository: Repository = Depends(Repository.get_instance)) -> list[User] | list[Tweet]:
+    return await repository.get_all(0)
 
 
 @router.get("/debug_get/{collection}/{user_id}")
@@ -65,12 +67,14 @@ async def add_user(user: UserUpdate,
     id = await repository.create(user)
     await search_repository.create(id, user)
     return id
-@router.post("/Tweet/", tags=["Tweet"])
-async def add_Tweet(Tweet: TweetUpdate,
+
+
+@router.post("/tweet/", tags=["tweet"])
+async def add_tweet(tweet: TweetUpdate,
                       repository: Repository = Depends(Repository.get_instance),
                       search_repository: SearchStudentRepository = Depends(SearchStudentRepository.get_instance)) -> str:
-    id = await repository.create_Tweet(Tweet)
-    await search_repository.create_Tweet(id, Tweet)
+    id = await repository.create_tweet(tweet)
+    await search_repository.create_tweet(id, tweet)
     return id
 
 
@@ -87,16 +91,16 @@ async def remove_user(user_id: str,
     return Response()
 
 
-@router.delete("/Tweet/{Tweet_id}")
-async def remove_Tweet(Tweet_id: str,
+@router.delete("/tweet/{tweet_id}")
+async def remove_tweet(tweet_id: str,
                          repository: Repository = Depends(Repository.get_instance),
                          search_repository: SearchStudentRepository = Depends(SearchStudentRepository.get_instance)) -> Response:
-    if not ObjectId.is_valid(Tweet_id):
+    if not ObjectId.is_valid(tweet_id):
         return Response(status_code=status.HTTP_400_BAD_REQUEST)
-    Tweet = await repository.delete_Tweet(Tweet_id)
-    if Tweet is None:
+    tweet = await repository.delete_tweet(tweet_id)
+    if tweet is None:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
-    await search_repository.delete_Tweet(Tweet_id)
+    await search_repository.delete_tweet(tweet_id)
     return Response()
 
 

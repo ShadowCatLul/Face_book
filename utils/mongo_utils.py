@@ -1,6 +1,6 @@
 
 from typing import Any
-
+from typing import List
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
@@ -11,7 +11,7 @@ db_client: AsyncIOMotorClient = None
 
 async def get_db_collection() -> list[AsyncIOMotorCollection]:
     mongo_db = "Twitter"
-    mongo_collections = ["users_collection",  "tweets_collection"]
+    mongo_collections = ["tweets_collection", "users_collection"]
     mc = []
     for collection in mongo_collections:
         mc.append(db_client.get_database(mongo_db).get_collection(collection))
@@ -23,7 +23,7 @@ async def connect_and_init_mongo():
     global db_client
     mongo_uri = "mongodb://localhost:27017/"
     mongo_db = "Twitter"
-    mongo_collections = ["users_collection", "tweets_collection"]
+    mongo_collections = ["tweets_collection", "users_collection"]
     try:
         db_client = AsyncIOMotorClient(mongo_uri)
         await db_client.server_info()
@@ -52,6 +52,6 @@ def map(obj: Any, collection: str) -> User | Tweet | None:
     if obj is None:
         return None
     if collection == 'users_collection':
-        return User(id=str(obj['_id']), username=obj['username'], email=obj['email'], posts=obj['tweets'])
-    if collection == 'posts_collection':
-        return Tweet(id=str(obj['_id']), user_id=obj['user_id'], title=obj['title'], content=obj['content'])
+            return User(id=str(obj['_id']), username=str(obj['username']), email=obj['email'], tweets=obj['tweets'])
+    if collection == 'tweets_collection':
+            return Tweet(id=str(obj['_id']), user_id=str(obj['user_id']), content=obj['content'])

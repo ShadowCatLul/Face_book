@@ -13,12 +13,12 @@ class Repository:
         self._db_collections = db_collections
 
 
-#CreateUser
+#User
     async def create(self, user: UserUpdate) -> str:
-        insert_result = await self._db_collections[0].insert_one(dict(user))
+        insert_result = await self._db_collections[1].insert_one(dict(user))
         return str(insert_result.inserted_id)
 
-    async def get_all(self, collection: int) -> list[User] | list[Tweet]: # вся коллекция
+    async def get_all(self, collection: int) -> list[Tweet] | list[User]: # вся коллекция
         db = []
         async for obj in self._db_collections[collection].find():
             db.append(map(obj, self._db_collections[collection].name))
@@ -32,6 +32,7 @@ class Repository:
     async def update(self, id: str, obj, collection: int) -> User | Tweet | None:
         updated_obj = await self._db_collections[collection].find_one_and_replace(get_filter(id), dict(obj))
         return map(updated_obj)
+
     
 
     #MakeTweet
@@ -43,7 +44,7 @@ class Repository:
         user_upd = UserUpdate(username=u.username, email=u.email, posts=u.posts, comments=u.comments)
         
 
-        insert_result = await self._db_collections[1].insert_one(dict(post))
+        insert_result = await self._db_collections[0].insert_one(dict(post))
 
         if (user_upd.posts != None):
             user_upd.posts.append(str(insert_result.inserted_id))
@@ -60,8 +61,8 @@ class Repository:
         db = map(await self._db_collections[0].find_one_and_delete(get_filter(id)), self._db_collections[0].name)
         return db
     
-    async def delete_post(self, id: str) -> User | Tweet| None:
-        db = map(await self._db_collections[1].find_one_and_delete(get_filter(id)), self._db_collections[1])
+    async def delete_tweet(self, id: str) -> User | Tweet| None:
+        db = map(await self._db_collections[0].find_one_and_delete(get_filter(id)), self._db_collections[1])
         return db
 
 
