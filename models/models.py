@@ -18,12 +18,11 @@ class UserUpdate(BaseModel):
 class Tweet(BaseModel):
     id: str
     user_id: str
-    content: List[Union[str, bytes]]
+    content: List[Union[str]]
 
 
 class TweetUpdate(BaseModel):
     user_id: str
-    title: str
-    content: List[Union[str, bytes]]
+    content: List[Union[str]]
 
 

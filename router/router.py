@@ -10,36 +10,42 @@ from repository.repository import Repository
 from repository.search_repository import SearchStudentRepository
 from models.models import User, Tweet
 from models.models import UserUpdate, TweetUpdate
+from utils.mongo_utils import get_filter
 
 router = APIRouter()
 
 
 @router.get("/")
 async def root():
-
     return {"Hello": "World"}
 
 
 @router.get("/user/all", tags=["User"])
-async def get_all(repository: Repository = Depends(Repository.get_instance)) -> list[User] | list[Tweet]:
+async def get_all(repository: Repository = Depends(Repository.get_instance)) -> list[Tweet] | list[User]:
     return await repository.get_all(1)
 
+
 @router.get("/tweet/all", tags=["tweet"])
-async def get_all(repository: Repository = Depends(Repository.get_instance)) -> list[User] | list[Tweet]:
+async def get_all(repository: Repository = Depends(Repository.get_instance)) -> list[Tweet] | list[User]:
     return await repository.get_all(0)
 
 
 @router.get("/debug_get/{collection}/{user_id}")
 async def get(collection: int, user_id: str, repository: Repository = Depends(Repository.get_instance),
-                                             memcached_client: HashClient = Depends(get_memcached_client)) -> User | Tweet:
+              memcached_client: HashClient = Depends(get_memcached_client)) -> Tweet | User:
     
-    obj = await repository.get_by_id(id = user_id, collection = collection)
+    obj = await repository.get_by_id(id=user_id, collection=collection)
     return obj
 
 
 @router.get("/user/filter", tags=["User"])
 async def get_by_name(username: str, repository: SearchStudentRepository = Depends(SearchStudentRepository.get_instance)) -> Any:
-    return await repository.find_by_username(username = username)
+    return await repository.find_by_username(username=username)
+
+
+@router.get("/tweet/filter", tags=["Tweet"])
+async def get_by_text(text: str, repository: SearchStudentRepository = Depends(SearchStudentRepository.get_instance)) -> Any:
+    return await repository.find_by_text(text=text)
 
 
 @router.get("/user/{user_id}", response_model=User, tags=["User"])
@@ -53,7 +59,7 @@ async def get_by_id(user_id: str,
     if user is not None:
         return user
 
-    user = await repository.get_by_id(str(user_id), collection=0)
+    user = await repository.get_by_id(str(user_id), collection=1)
     if user is None:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
     memcached_client.add(user_id, user)
@@ -61,7 +67,7 @@ async def get_by_id(user_id: str,
 
 
 @router.post("/user/", tags=["User"])
-async def add_user(user: UserUpdate,
+async def add_user(user: User,
                       repository: Repository = Depends(Repository.get_instance),
                       search_repository: SearchStudentRepository = Depends(SearchStudentRepository.get_instance)) -> str:
     id = await repository.create(user)
@@ -69,8 +75,8 @@ async def add_user(user: UserUpdate,
     return id
 
 
-@router.post("/tweet/", tags=["tweet"])
-async def add_tweet(tweet: TweetUpdate,
+@router.post("/tweet/", tags=["Tweet"])
+async def add_tweet(tweet: Tweet,
                       repository: Repository = Depends(Repository.get_instance),
                       search_repository: SearchStudentRepository = Depends(SearchStudentRepository.get_instance)) -> str:
     id = await repository.create_tweet(tweet)
@@ -111,7 +117,7 @@ async def update_user(user_id: str,
                          search_repository: SearchStudentRepository = Depends(SearchStudentRepository.get_instance)) -> Any:
     if not ObjectId.is_valid(user_id):
         return Response(status_code=status.HTTP_400_BAD_REQUEST)
-    user = await repository.update(user_id, user_model)
+    user = await repository.update(user_id, user_model, 1)
     if user is None:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
     await search_repository.update(user_id, user_model)

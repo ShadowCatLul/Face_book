@@ -14,7 +14,7 @@ class Repository:
 
 
 #User
-    async def create(self, user: UserUpdate) -> str:
+    async def create(self, user: User) -> str:
         insert_result = await self._db_collections[1].insert_one(dict(user))
         return str(insert_result.inserted_id)
 
@@ -31,7 +31,7 @@ class Repository:
 
     async def update(self, id: str, obj, collection: int) -> User | Tweet | None:
         updated_obj = await self._db_collections[collection].find_one_and_replace(get_filter(id), dict(obj))
-        return map(updated_obj)
+        return map(updated_obj, collection=str(collection))
 
     
 
@@ -39,9 +39,9 @@ class Repository:
     async def create_tweet(self, post: Tweet) -> str:
         u = await self._db_collections[0].find_one(get_filter(post.user_id))
 
-        u = map(u, self._db_collections[0].name)
-
-        user_upd = UserUpdate(username=u.username, email=u.email, posts=u.posts, comments=u.comments)
+        u = map(u, self._db_collections[0])
+        print(u)
+        user_upd = UserUpdate(username=u.username, email=u.email, posts=u.posts)
         
 
         insert_result = await self._db_collections[0].insert_one(dict(post))

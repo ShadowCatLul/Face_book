@@ -16,7 +16,7 @@ class SearchStudentRepository:
         self._elasticsearch_client = elasticsearch_client
         self._elasticsearch_index = index
 
-    async def create(self, user_id: str, user: UserUpdate):
+    async def create(self, user_id: str, user: User):
         await self._elasticsearch_client.create(index=self._elasticsearch_index[1], id=user_id, body=dict(user))
 
     async def update(self, user_id: str, user: UserUpdate):
@@ -25,7 +25,7 @@ class SearchStudentRepository:
     async def delete(self, user_id: str):
         await self._elasticsearch_client.delete(index=self._elasticsearch_index[1], id=user_id)
 
-    async def create_tweet(self, post_id: str, user: TweetUpdate):
+    async def create_tweet(self, post_id: str, user: Tweet):
         await self._elasticsearch_client.create(index=self._elasticsearch_index[0], id=post_id, body=dict(user))
 
     async def update_tweet(self, post_id: str, user: TweetUpdate):
@@ -41,44 +41,46 @@ class SearchStudentRepository:
             return []
 
         query_body = {
-        "query": {
-            "match": {
-                "username": username
+            "query": {
+                "match": {
+                    "username": username
+                    }
                 }
-            }
         }
         response = await self._elasticsearch_client.search(index=self._elasticsearch_index[1], body=query_body,
                                                            filter_path=['hits.hits._id', 'hits.hits._source'])
+        print(response)
         if 'hits' not in response:
             return []
         result = response['hits']['hits']
         users = list(map(lambda _X: User(id=_X['_id'], username=_X['_source']['username'], email=_X['_source']['email'],
-                                         posts=_X['_source']['posts'], comments=_X['_source']['comments']), result))
+                                         tweets=_X['_source']['tweets']), result))
 
         return users
 
-    async def find_by_title(self, text: str):
+    async def find_by_text(self, text: str):
         index_exist = await self._elasticsearch_client.indices.exists(index=self._elasticsearch_index[0])
 
         if not index_exist:
             return []
 
         query_body = {
-            "query":{
+            "query": {
                 "match": {
-                    "tweet": {
+                    "tweets": {
                         "query": text,
-                        "minimum_should_match": "75%"
+                        "minimum_should_match": "65%"
                     }
                 }
             }
         }
         response = await self._elasticsearch_client.search(index=self._elasticsearch_index[0],
-                                                           query=query_body, filter_path=['hits.hits._id', 'hits.hits._source'])
+                                                           query=query_body, filter_path=['hits.hits._id',
+                                                                                          'hits.hits._source'])
         if 'hits' not in response.body:
             return []
         result = response.body['hits']['hits']
-        posts = list(map(lambda twt: Tweet(id=twt['_id'], user_id=twt['_source']['name'],
+        posts = list(map(lambda twt: Tweet(id=twt['_id'], user_id=twt['_source']['user_id'],
                                            content=twt['_source']['content']), result))
 
         return posts
@@ -89,6 +91,6 @@ class SearchStudentRepository:
 
         elasticsearch_index = []
         for collection in collections:
-            elasticsearch_index.append(f"{collection.name}_index") # 
+            elasticsearch_index.append(f"{collection.name}_index")
 
         return SearchStudentRepository(elasticsearch_index, elasticsearch_client)
